@@ -1,0 +1,6 @@
+{
+  "class 10 math": { "67": 1, "unit": "price" },
+  "a4 paper rim": { "220": 1, "unit": "rim" },
+  "pen box": { "10": 1, "unit": "box" },
+  "register": { "60": 1, "unit": "piece" }
+}
