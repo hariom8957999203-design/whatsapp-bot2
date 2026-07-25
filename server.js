@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 // ⚠️ यहाँ अपनी डिटेल्स डालें
-const TOKEN = 'EAAMT5R4QlZAYBSLK8TSP1ZAjgKiPT7ZCxbXbs16aSEcSs0asBikquJDfmxZCgi46haGiSZApWRVrbG5ntdOdaUOgDdhpT67L3BySlYfSINJjdEO1jfiXP6SRaHLQZCzGC392606G3EJFhKJ8dZCHKcQQr9RpxDBaKscyBkfVrAEZCBRBNTVOiIRPjGOozZA85VmzarOYzt7IlBZChYMZCTuizZC0mjKGWpofhcbJaDUYanqwcdz2LBxSdIeQkrnFGiWKWuEf7dvZCi5R5FAiFXsrdwoRLA5eY';
+const TOKEN = 'EAAMT5R4QlZAYBSIZA4bdyeXF2uJwcZBS7oTNc7mLOdSKw4YeO1yYzGOzOdDoat3tZCQrUNymoxC6A06rURjgq0frkoDmQfO16LP8jlgZAZCZArYqxkbI4ssmB8x7LZBEK5cajYHHsr12mjS0aqM5ORshahNkQ13zNI9mt5u5eMFbvgHzvdcZAVuritQ1IBgyk0chR0NpoPi3mxROzfEnJ1eutZBU3nl1vdodl7gQrSKZCEfZBcfrbuCU0IVTvGj9U9utLgx2OLEIW7qWiC1j8OaSqgb0GOOg9AZDZD';
 const PHONE_NUMBER_ID = '1277173642137189';
 const VERIFY_TOKEN = 'my_secret_token_123'; // इसे ऐसे ही रहने दें
 
