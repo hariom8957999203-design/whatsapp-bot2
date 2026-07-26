@@ -16,7 +16,7 @@ const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID || '1277173642137189';
 const VERIFY_TOKEN = 'my_secret_token_123';
 
 // Apne Render Server ka Webhook URL (Self-ping ke liye)
-const SERVER_URL = https://whatsapp-bot-final-j468.onrender.com/webhook
+const SERVER_URL = 'https://whatsapp-bot-final-j468.onrender.com/webhook';
 
 // Saman ki list load karein (items.json)
 let items = {};
