@@ -1,19 +1,87 @@
 const express = require('express');
-const axios = require('axios');
+const bodyParser = require('body-parser');
 const fs = require('fs');
+const axios = require('axios');
+const cron = require('node-cron');
 
 const app = express();
-app.use(express.json());
+app.use(bodyParser.json());
 
-// ⚠️ यहाँ अपनी डिटेल्स डालें
-const TOKEN = 'EAAMT5R4QlZAYBSBqwXyxqsMBrL236wCEZAQ9KDultnRpPJEWcG9UIcBuPugqjJx7A5qKCsTxcFyhCdC2kjKTcx4ZAUaaz403lkL52m9TOcTCZB74vzNMsuY9CTxNkRRlvZAnhEq3CrcrXR5uwD2ZAPTrZCga7psAZBzTxnTK1ZCq0XIddr5BmEjzFZBcxYZAgQkgfue6jPSlST6aFG1481daUi36q9ydj5S4FIcDZBlNhoJObzzsqwSIGY24wF9ezqB0ZCCu1Ln9xFilfBBels0nejS9mToBrwQZDZD';
-const PHONE_NUMBER_ID = '1277173642137189';
-const VERIFY_TOKEN = 'my_secret_token_123'; // इसे ऐसे ही रहने दें
+// ==========================================
+// 1. CONFIGURATION (Apni Details Yahan Daalein)
+// ==========================================
+// Meta Permanent System User Token yahan daalein
+const TOKEN = process.env.WHATSAPP_TOKEN || 'EAANT5R4QIZAY...'; 
+const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID || '1277173642137189';
+const VERIFY_TOKEN = 'my_secret_token_123';
 
-// सामान की लिस्ट लोड करें
-let items = JSON.parse(fs.readFileSync('items.json', 'utf8'));
+// Apne Render Server ka Webhook URL (Self-ping ke liye)
+const SERVER_URL = 'https://whatsapp-bot2-2-86qw.onrender.com/webhook';
 
-// Webhook Verification (Meta के लिए)
+// Saman ki list load karein (items.json)
+let items = {};
+try {
+  items = JSON.parse(fs.readFileSync('items.json', 'utf8'));
+} catch (err) {
+  console.log('Error loading items.json:', err.message);
+}
+
+// ==========================================
+// 2. HELPER FUNCTIONS (WhatsApp API Calling)
+// ==========================================
+
+// Simple Text Message Bhejne ke liye
+async function sendTextMessage(to, text) {
+  try {
+    await axios({
+      method: 'POST',
+      url: `https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`,
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      data: {
+        messaging_product: 'whatsapp',
+        to: to,
+        type: 'text',
+        text: { body: text },
+      },
+    });
+    console.log(`Message sent to ${to}`);
+  } catch (error) {
+    console.error('Error sending text message:', error.response ? error.response.data : error.message);
+  }
+}
+
+// Photo Message Bhejne ke liye
+async function sendImageMessage(to, imageUrl, caption) {
+  try {
+    await axios({
+      method: 'POST',
+      url: `https://graph.facebook.com/v20.0/${PHONE_NUMBER_ID}/messages`,
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      data: {
+        messaging_product: 'whatsapp',
+        to: to,
+        type: 'image',
+        image: {
+          link: imageUrl,
+          caption: caption || 'Daily Special Offer!'
+        }
+      },
+    });
+    console.log(`Daily Photo sent to ${to}`);
+  } catch (error) {
+    console.error('Error sending image:', error.response ? error.response.data : error.message);
+  }
+}
+
+// ==========================================
+// 3. WEBHOOK VERIFICATION (GET Route)
+// ==========================================
 app.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -26,7 +94,9 @@ app.get('/webhook', (req, res) => {
   }
 });
 
-// मैसेज आने पर ऑटो-रिप्लाई करने का लॉजिक
+// ==========================================
+// 4. INCOMING MESSAGES HANDLER (POST Route)
+// ==========================================
 app.post('/webhook', async (req, res) => {
   const body = req.body;
 
@@ -37,41 +107,32 @@ app.post('/webhook', async (req, res) => {
       body.entry[0].changes[0].value.messages &&
       body.entry[0].changes[0].value.messages[0]
     ) {
-      const from = body.entry[0].changes[0].value.messages[0].from;
-      const msgText = body.entry[0].changes[0].value.messages[0].text.body.toLowerCase().trim();
+      const message = body.entry[0].changes[0].value.messages[0];
+      const from = message.from; // Customer का Phone Number
 
-      let replyMessage = "";
+      if (message.type === 'text') {
+        const userQuery = message.text.body.trim().toLowerCase();
+        let replyText = '';
 
-      // सामान चेक करना
-      let foundItem = null;
-      for (let itemKey in items) {
-        if (msgText.includes(itemKey)) {
-          foundItem = { name: itemKey, ...items[itemKey] };
-          break;
-        }
-      }
-
-      if (foundItem) {
-        replyMessage = `✅ *${foundItem.name.toUpperCase()}*\n💰 रेट: ₹${foundItem.price} प्रति ${foundItem.unit}\n\n📝 *Please reply with the required Order Quantity.* (कृपया ऑर्डर की मात्रा बताएं)`;
-      } else {
-        replyMessage = `नमस्कार! वर्मा बुक डिपो में आपका स्वागत है। 🙏\n\nकृपया जिस सामान का रेट चाहिए उसका नाम सही से लिखें (जैसे: Class 10 Math, A4 paper rim, Register).`;
-      }
-
-      // WhatsApp पर मैसेज वापस भेजना
-      try {
-        await axios.post(
-          `https://graph.facebook.com/v18.0/${PHONE_NUMBER_ID}/messages`,
-          {
-            messaging_product: 'whatsapp',
-            to: from,
-            text: { body: replyMessage }
-          },
-          {
-            headers: { Authorization: `Bearer ${TOKEN}` }
+        // Rate Check Logic (items.json se dhoondhna)
+        let foundItem = null;
+        for (let itemName in items) {
+          if (userQuery.includes(itemName.toLowerCase())) {
+            foundItem = itemName;
+            break;
           }
-        );
-      } catch (error) {
-        console.error("Error sending message:", error.response ? error.response.data : error.message);
+        }
+
+        if (foundItem) {
+          replyText = `📌 *${foundItem}* ka rate hai: ₹${items[foundItem]}`;
+        } else if (userQuery.includes('rate') || userQuery.includes('price') || userQuery.includes('kitne ka hai')) {
+          replyText = 'Kripya item ka exact naam likhein, jaise: "Copy ka rate kya hai?" ya "Pen price"';
+        } else {
+          replyText = 'Namaste! Verma Book Depo mein aapka swagat hai. Aap kisi bhi item ka rate jaanne ke liye item ka naam likh kar bhej sakte hain.';
+        }
+
+        // Customer ko Reply bhein
+        await sendTextMessage(from, replyText);
       }
     }
     res.sendStatus(200);
@@ -80,4 +141,40 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
-app.listen(3000, () => console.log('Bot Webhook Active on Port 3000'));
+// ==========================================
+// 5. DAILY PHOTO UPLOAD (CRON JOB)
+// ==========================================
+// Time Zone: India (IST)
+// Example Syntax: '0 10 * * *' matlab Roz subah 10:00 AM par chalega.
+cron.schedule('0 10 * * *', async () => {
+  console.log('Running Daily Photo Broadcast...');
+  
+  // Jis customer ko roz photo bhejni hai unka phone number yahan likhein (Country Code +91 ke sath)
+  const customerList = ['919876543210']; 
+  const photoUrl = 'https://picsum.photos/800/600'; // Yahan apni photo ka public URL daalein
+  const captionText = 'Aaj ka special discount offer! Verma Book Depo.';
+
+  for (let phone of customerList) {
+    await sendImageMessage(phone, photoUrl, captionText);
+  }
+}, {
+  timezone: "Asia/Kolkata"
+});
+
+// ==========================================
+// 6. RENDER ANTI-SLEEP (SELF-PING SYSTEM)
+// ==========================================
+// Har 10 minute mein server khud ko ping karega taaki Render sleep na ho
+setInterval(() => {
+  axios.get(SERVER_URL)
+    .then(() => console.log('Self-ping successful: Server stays active!'))
+    .catch((err) => console.log('Self-ping error:', err.message));
+}, 10 * 60 * 1000);
+
+// ==========================================
+// 7. SERVER START
+// ==========================================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
