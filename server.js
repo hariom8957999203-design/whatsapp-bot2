@@ -82,18 +82,40 @@ async function sendImageMessage(to, imageUrl, caption) {
 // ==========================================
 // 3. WEBHOOK VERIFICATION (GET Route)
 // ==========================================
-app.get('/webhook', (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
+app.post('/webhook', async (req, res) => {
+    try {
+        const body = req.body;
 
-  if (mode && token === VERIFY_TOKEN) {
-    res.status(200).send(challenge);
-  } else {
-    res.sendStatus(403);
-  }
+        // Check karein ki incoming request WhatsApp message hi hai
+        if (body.object === 'whatsapp_business_account') {
+            const entry = body.entry?.[0];
+            const changes = entry?.changes?.[0];
+            const value = changes?.value;
+            const message = value?.messages?.[0];
+
+            if (message) {
+                // 🎯 Sahi number nikalein jiss user ne message bheja hai:
+                const fromNumber = message.from; 
+
+                // User ka message text:
+                const userText = message.text?.body || '';
+
+                console.log(`Incoming message from ${fromNumber}: ${userText}`);
+
+                // 🚀 AB REPLY BHEJEIN: "fromNumber" dynamic pass hoga!
+                await sendTextMessage(fromNumber, "Hello! Main aapka bot hoon. Aapka message mil gaya.");
+            }
+
+            // Meta ko batayein ki request sahi se receive ho gayi hai
+            res.sendStatus(200);
+        } else {
+            res.sendStatus(404);
+        }
+    } catch (error) {
+        console.error("Webhook processing error:", error);
+        res.sendStatus(500);
+    }
 });
-
 // ==========================================
 // 4. INCOMING MESSAGES HANDLER (POST Route)
 // ==========================================
