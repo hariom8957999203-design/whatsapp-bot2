@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 // 1. CONFIGURATION (Apni Details Yahan Daalein)
 // ==========================================
 // Meta Permanent System User Token yahan daalein
-const TOKEN = process.env.WHATSAPP_TOKEN || 'EAANT5R4QIZAY...'; 
+const TOKEN = process.env.WHATSAPP_TOKEN || 'EAAMT5R4QlZAYBSETNwgZBAKtTdXZBNZCghxzvpevM3ryGDiwdMS2WNtwLBjzth6o1Prw3qhZBn1ybZBX0RGg8CQhrz5f0kvhCYPyZBorsUgmN0YZAGPshFzT6rttZAJaFZBZCpxZA5BNahB7mANngyjXLd37Rf6uRMPcn1RdPL3qX6VZAGlFZCPgXXFiFEvK5EZB2ebQH7FZCe3G0DpJMakvgLluNWGCoiEG5jFD9j8v3kX14jSXiWGlFDSdVxREKP2GuzPdm3g52H6jeBZCCSQUTR2BfpZCz8leYc1EK4ooYhsdMpOyAZD'; 
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID || '1277173642137189';
 const VERIFY_TOKEN = 'my_secret_token_123';
 
